@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "url": "https://openlake.in",
+    "file": "index.html",
+    "title": "OpenLake",
+    "depth": 0
+  },
+  {
+    "url": "https://openlake.in/programs",
+    "file": "programs.html",
+    "title": "Projects \u2014 OpenLake",
+    "depth": 1
+  },
+  {
+    "url": "https://openlake.in/newevents",
+    "file": "newevents.html",
+    "title": "OpenLake",
+    "depth": 1
+  },
+  {
+    "url": "https://openlake.in/philosophy",
+    "file": "philosophy.html",
+    "title": "Philosophy \u2014 OpenLake",
+    "depth": 1
+  },
+  {
+    "url": "https://openlake.in/team",
+    "file": "team.html",
+    "title": "Team \u2014 Hack Club",
+    "depth": 1
+  },
+  {
+    "url": "https://openlake.in/newsletterpage",
+    "file": "newsletterpage.html",
+    "title": "OpenLake",
+    "depth": 2
+  }
+]
