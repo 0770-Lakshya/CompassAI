@@ -4,5 +4,4 @@ groq
 rapidfuzz
 numpy
 python-dotenv
-sentence-transformers
-torch --index-url https://download.pytorch.org/whl/cpu
+fastembed
