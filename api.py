@@ -16,6 +16,9 @@ Then test without a browser:
          -d "{\"query\": \"where are the projects\"}"
 """
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
