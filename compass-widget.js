@@ -20,7 +20,7 @@
 
   // ---- find our own <script> tag to read config ----
   const me = document.currentScript;
-  const API = (me && me.dataset.api) || "http://localhost:8000";
+  const API = (me && me.dataset.api) || "https://compassai-vkoe.onrender.com";
 
   // ---- create an isolated host element ----
   const host = document.createElement("div");
