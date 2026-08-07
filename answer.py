@@ -19,7 +19,6 @@ import json
 from pathlib import Path
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from groq import Groq
 from retrieval import load, search
 
