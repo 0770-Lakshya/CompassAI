@@ -1,4 +1,7 @@
-requests
-beautifulsoup4
-sentence-transformers
+fastapi
+uvicorn
+groq
+voyageai
+rapidfuzz
 numpy
+python-dotenv
