@@ -1,29 +1,32 @@
 """
-Hybrid retrieval: semantic (Voyage API) + lexical (rapidfuzz).
+Hybrid retrieval: semantic (local model) + lexical (rapidfuzz).
 
-Swapped from local sentence-transformers to Voyage hosted embeddings so
-the server needs no torch and almost no RAM. The lexical half and all
+Uses a local sentence-transformers model so there is NO API key, NO rate
+limit, and NO billing. all-MiniLM-L6-v2 is 384-dim and ~90MB — small
+enough for Render's free tier at runtime. The lexical half and all
 scoring (filler stripping, h1 bonus, weighting) are unchanged.
 
-Env:
-    VOYAGE_API_KEY   from dashboard.voyageai.com
-
 Usage from answer.py / api.py:
-    from retrieval import load, search, embed_query
+    from retrieval import load, search
 """
 
 import os
+# load the model from local cache without phoning home to Hugging Face
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import json
 from pathlib import Path
 from urllib.parse import urlparse
 
 import numpy as np
 from rapidfuzz import fuzz
-import voyageai
+from sentence_transformers import SentenceTransformer
 
 CHUNKS = Path("chunks.json")
 CACHE = Path("embeddings.npy")
-EMBED_MODEL = "voyage-3-lite"        # 512-dim, fast, free-tier friendly
+EMBED_MODEL = "all-MiniLM-L6-v2"     # 384-dim, ~90MB, local & free
 
 W_SEMANTIC = 0.65
 W_LEXICAL = 0.35
@@ -33,18 +36,15 @@ FILLER = {"where", "is", "are", "the", "all", "of", "a", "an", "to",
           "me", "take", "show", "find", "i", "want", "can", "how",
           "do", "on", "in", "at", "page", "please", "what"}
 
-_client = None
+_model = None
 
 
-def client():
-    """Lazy Voyage client so importing this module doesn't require the key."""
-    global _client
-    if _client is None:
-        key = os.environ.get("VOYAGE_API_KEY")
-        if not key:
-            raise RuntimeError("Set VOYAGE_API_KEY (dashboard.voyageai.com).")
-        _client = voyageai.Client(api_key=key)
-    return _client
+def model():
+    """Load the embedder once, lazily, and keep it in memory."""
+    global _model
+    if _model is None:
+        _model = SentenceTransformer(EMBED_MODEL)
+    return _model
 
 
 def strip_filler(query):
@@ -68,17 +68,8 @@ def lexical_target(c):
     return f"{slug_words(c['url'])} {c['page_title']} {c['heading']}"
 
 
-def _embed(texts, input_type):
-    """Call Voyage; returns a normalized numpy array (rows = texts)."""
-    resp = client().embed(texts, model=EMBED_MODEL, input_type=input_type)
-    vecs = np.array(resp.embeddings, dtype=np.float32)
-    # normalize so dot product == cosine similarity
-    norms = np.linalg.norm(vecs, axis=1, keepdims=True)
-    return vecs / np.clip(norms, 1e-8, None)
-
-
 def embed_query(query):
-    return _embed([query], input_type="query")[0]
+    return model().encode([query], normalize_embeddings=True)[0]
 
 
 def load(force_reembed=False):
@@ -89,18 +80,17 @@ def load(force_reembed=False):
         if len(vecs) == len(chunks):
             return chunks, None, vecs
 
-    print(f"embedding {len(chunks)} chunks via Voyage...")
+    print(f"embedding {len(chunks)} chunks locally...")
     texts = [build_text(c) for c in chunks]
-    out = []
-    for i in range(0, len(texts), 128):
-        out.append(_embed(texts[i:i + 128], input_type="document"))
-    vecs = np.vstack(out)
+    vecs = model().encode(texts, normalize_embeddings=True,
+                          show_progress_bar=True)
+    vecs = np.asarray(vecs, dtype=np.float32)
     np.save(CACHE, vecs)
     return chunks, None, vecs
 
 
 def search(query, chunks, embedder, vecs, k=3, debug=False):
-    # embedder arg kept for signature compatibility; unused now
+    # embedder arg kept for signature compatibility; unused
     q = embed_query(query)
     sem = vecs @ q
 
