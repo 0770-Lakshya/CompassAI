@@ -1,20 +1,14 @@
 """
-Hybrid retrieval: semantic (local model) + lexical (rapidfuzz).
+Hybrid retrieval: semantic (fastembed / ONNX) + lexical (rapidfuzz).
 
-Uses a local sentence-transformers model so there is NO API key, NO rate
-limit, and NO billing. all-MiniLM-L6-v2 is 384-dim and ~90MB — small
-enough for Render's free tier at runtime. The lexical half and all
+Uses fastembed's ONNX build of all-MiniLM-L6-v2 — same model, same 384-dim
+vectors as before, but NO torch, so it fits comfortably in Render's 512MB
+free tier. No API key, no rate limit, no billing. The lexical half and all
 scoring (filler stripping, h1 bonus, weighting) are unchanged.
 
 Usage from answer.py / api.py:
     from retrieval import load, search
 """
-
-import os
-# load the model from local cache without phoning home to Hugging Face
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 import json
 from pathlib import Path
@@ -22,11 +16,11 @@ from urllib.parse import urlparse
 
 import numpy as np
 from rapidfuzz import fuzz
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
 CHUNKS = Path("chunks.json")
 CACHE = Path("embeddings.npy")
-EMBED_MODEL = "all-MiniLM-L6-v2"     # 384-dim, ~90MB, local & free
+EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"   # 384-dim, ONNX, ~90MB
 
 W_SEMANTIC = 0.65
 W_LEXICAL = 0.35
@@ -40,11 +34,19 @@ _model = None
 
 
 def model():
-    """Load the embedder once, lazily, and keep it in memory."""
+    """Load the ONNX embedder once, lazily, kept in memory."""
     global _model
     if _model is None:
-        _model = SentenceTransformer(EMBED_MODEL)
+        _model = TextEmbedding(model_name=EMBED_MODEL)
     return _model
+
+
+def _encode(texts):
+    """fastembed returns a generator of un-normalized vectors; normalize
+    so a dot product equals cosine similarity."""
+    vecs = np.array(list(model().embed(texts)), dtype=np.float32)
+    norms = np.linalg.norm(vecs, axis=1, keepdims=True)
+    return vecs / np.clip(norms, 1e-8, None)
 
 
 def strip_filler(query):
@@ -69,7 +71,7 @@ def lexical_target(c):
 
 
 def embed_query(query):
-    return model().encode([query], normalize_embeddings=True)[0]
+    return _encode([query])[0]
 
 
 def load(force_reembed=False):
@@ -80,11 +82,9 @@ def load(force_reembed=False):
         if len(vecs) == len(chunks):
             return chunks, None, vecs
 
-    print(f"embedding {len(chunks)} chunks locally...")
+    print(f"embedding {len(chunks)} chunks locally (ONNX)...")
     texts = [build_text(c) for c in chunks]
-    vecs = model().encode(texts, normalize_embeddings=True,
-                          show_progress_bar=True)
-    vecs = np.asarray(vecs, dtype=np.float32)
+    vecs = _encode(texts)
     np.save(CACHE, vecs)
     return chunks, None, vecs
 
