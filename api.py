@@ -1,39 +1,29 @@
 """
-api.py — HTTP layer for Compass.
+api.py — multi-site HTTP layer for Compass.
 
-Wraps the existing retrieval + answer pipeline in a FastAPI server so the
-browser widget can call it. The embedder and chunks load ONCE at startup
-(not per request), which is the whole point of a server vs the CLI.
+Loads every registered site's index at startup into memory. Each /query
+carries a site_id so the API searches only that site's chunks.
 
 Usage:
-    pip install fastapi uvicorn
-    setx GROQ_API_KEY "gsk_..."      (then reopen terminal)
     uvicorn api:app --reload
-
-Then test without a browser:
-    curl -X POST http://localhost:8000/query ^
-         -H "Content-Type: application/json" ^
-         -d "{\"query\": \"where are the projects\"}"
 """
 
 from dotenv import load_dotenv
 load_dotenv()
 
 import os
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from groq import Groq
 
-from retrieval import load, search
-from answer import answer   # reuse the exact logic the CLI uses
+from retrieval import load_all_sites, load_site, model
+from answer import answer
 
-# --- loaded once at startup, held in memory for the server's lifetime ---
-STATE = {}
+# in-memory registry: {site_id: (chunks, vecs)}  +  shared llm
+STATE = {"sites": {}, "llm": None}
 
 
 @asynccontextmanager
@@ -41,22 +31,17 @@ async def lifespan(app: FastAPI):
     key = os.environ.get("GROQ_API_KEY")
     if not key:
         raise RuntimeError("Set GROQ_API_KEY before starting the server.")
-    print("loading model + chunks (once)...")
-    chunks, embedder, vecs = load()          # no force_reembed in production
-    STATE["chunks"] = chunks
-    STATE["embedder"] = embedder
-    STATE["vecs"] = vecs
+    print("warming embedder + loading sites...")
+    model()                                  # warm the ONNX model once
+    STATE["sites"] = load_all_sites()
     STATE["llm"] = Groq(api_key=key)
-    print(f"ready. {len(chunks)} chunks in memory.")
+    print(f"ready. {len(STATE['sites'])} site(s) loaded: {list(STATE['sites'])}")
     yield
-    STATE.clear()
+    STATE["sites"].clear()
 
 
 app = FastAPI(title="Compass API", lifespan=lifespan)
 
-# CORS: the widget runs on the customer's domain and calls this API from
-# a different origin. Without this, the browser blocks every request.
-# "*" is fine for local dev; in production, restrict to registered sites.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -67,6 +52,7 @@ app.add_middleware(
 
 class QueryIn(BaseModel):
     query: str
+    site_id: str
 
 
 class QueryOut(BaseModel):
@@ -81,16 +67,23 @@ class QueryOut(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "chunks": len(STATE.get("chunks", []))}
+    return {
+        "status": "ok",
+        "sites": {sid: len(chunks) for sid, (chunks, _) in STATE["sites"].items()},
+    }
+
+
+@app.get("/sites")
+def sites():
+    return {"sites": list(STATE["sites"].keys())}
 
 
 @app.post("/query", response_model=QueryOut)
 def query(body: QueryIn):
-    result = answer(
-        body.query,
-        STATE["chunks"],
-        STATE["embedder"],
-        STATE["vecs"],
-        STATE["llm"],
-    )
-    return result
+    site = STATE["sites"].get(body.site_id)
+    if site is None:
+        # site not indexed — a clean, explicit signal (not a 500)
+        return {"found": False,
+                "reason": f"site '{body.site_id}' is not registered with Compass"}
+    chunks, vecs = site
+    return answer(body.query, chunks, vecs, STATE["llm"])
