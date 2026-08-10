@@ -1,39 +1,52 @@
 """
-api.py — HTTP layer for Compass.
+api.py — multi-site HTTP layer for Compass.
 
-Wraps the existing retrieval + answer pipeline in a FastAPI server so the
-browser widget can call it. The embedder and chunks load ONCE at startup
-(not per request), which is the whole point of a server vs the CLI.
+Loads every registered site's index at startup. Each /query carries a
+site_id so only that site's chunks are searched. New sites are added via
+POST /register (protected by ADMIN_TOKEN).
+
+Crawling does NOT happen here — Playwright needs more memory than a free
+Render instance has. The crawl runs wherever there's room (your machine
+via register_site.py today, a dedicated crawl service later) and pushes
+the finished chunks to /register. Swapping to on-demand crawling later
+means changing who calls this endpoint, not the endpoint itself.
 
 Usage:
-    pip install fastapi uvicorn
-    setx GROQ_API_KEY "gsk_..."      (then reopen terminal)
     uvicorn api:app --reload
-
-Then test without a browser:
-    curl -X POST http://localhost:8000/query ^
-         -H "Content-Type: application/json" ^
-         -d "{\"query\": \"where are the projects\"}"
 """
 
 from dotenv import load_dotenv
 load_dotenv()
 
 import os
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
+import json
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from groq import Groq
 
-from retrieval import load, search
-from answer import answer   # reuse the exact logic the CLI uses
+from retrieval import load_all_sites, embed_site, site_dir, SITES_DIR, model
+from answer import answer
 
-# --- loaded once at startup, held in memory for the server's lifetime ---
-STATE = {}
+STATE = {"sites": {}, "llm": None}
+
+
+def normalize_site_id(raw: str) -> str:
+    """
+    Hostnames vary: Example.COM, www.example.com, example.com:8080 are all
+    the same site to a visitor. Normalize so a site registered once matches
+    however the visitor arrived.
+    """
+    s = (raw or "").strip().lower()
+    s = s.split("//")[-1]          # tolerate a full URL being passed
+    s = s.split("/")[0]            # drop any path
+    s = s.split(":")[0]            # drop port
+    if s.startswith("www."):
+        s = s[4:]
+    return s
 
 
 @asynccontextmanager
@@ -41,22 +54,17 @@ async def lifespan(app: FastAPI):
     key = os.environ.get("GROQ_API_KEY")
     if not key:
         raise RuntimeError("Set GROQ_API_KEY before starting the server.")
-    print("loading model + chunks (once)...")
-    chunks, embedder, vecs = load()          # no force_reembed in production
-    STATE["chunks"] = chunks
-    STATE["embedder"] = embedder
-    STATE["vecs"] = vecs
+    print("warming embedder + loading sites...")
+    model()
+    STATE["sites"] = load_all_sites()
     STATE["llm"] = Groq(api_key=key)
-    print(f"ready. {len(chunks)} chunks in memory.")
+    print(f"ready. {len(STATE['sites'])} site(s): {list(STATE['sites'])}")
     yield
-    STATE.clear()
+    STATE["sites"].clear()
 
 
 app = FastAPI(title="Compass API", lifespan=lifespan)
 
-# CORS: the widget runs on the customer's domain and calls this API from
-# a different origin. Without this, the browser blocks every request.
-# "*" is fine for local dev; in production, restrict to registered sites.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -65,8 +73,11 @@ app.add_middleware(
 )
 
 
+# ---------- models ----------
+
 class QueryIn(BaseModel):
     query: str
+    site_id: str
 
 
 class QueryOut(BaseModel):
@@ -79,18 +90,72 @@ class QueryOut(BaseModel):
     reason: str | None = None
 
 
+class RegisterIn(BaseModel):
+    site_id: str
+    chunks: list[dict]
+
+
+class RegisterOut(BaseModel):
+    site_id: str
+    chunks: int
+    status: str
+
+
+# ---------- endpoints ----------
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "chunks": len(STATE.get("chunks", []))}
+    return {
+        "status": "ok",
+        "sites": {sid: len(c) for sid, (c, _) in STATE["sites"].items()},
+    }
+
+
+@app.get("/sites")
+def sites():
+    return {"sites": list(STATE["sites"].keys())}
 
 
 @app.post("/query", response_model=QueryOut)
 def query(body: QueryIn):
-    result = answer(
-        body.query,
-        STATE["chunks"],
-        STATE["embedder"],
-        STATE["vecs"],
-        STATE["llm"],
-    )
-    return result
+    sid = normalize_site_id(body.site_id)
+    site = STATE["sites"].get(sid)
+    if site is None:
+        return {"found": False,
+                "reason": f"site '{sid}' is not registered with Compass"}
+    chunks, vecs = site
+    return answer(body.query, chunks, vecs, STATE["llm"])
+
+
+@app.post("/register", response_model=RegisterOut)
+def register(body: RegisterIn, x_admin_token: str = Header(default="")):
+    """
+    Add or replace a site's index. Expects already-crawled chunks, each with
+    url / page_title / heading / level / selector / content.
+    """
+    expected = os.environ.get("ADMIN_TOKEN")
+    if not expected or x_admin_token != expected:
+        raise HTTPException(status_code=401, detail="invalid admin token")
+
+    sid = normalize_site_id(body.site_id)
+    if not sid:
+        raise HTTPException(status_code=400, detail="site_id required")
+    if not body.chunks:
+        raise HTTPException(status_code=400, detail="no chunks supplied")
+
+    required = {"url", "heading", "selector", "content", "level", "page_title"}
+    missing = required - set(body.chunks[0].keys())
+    if missing:
+        raise HTTPException(status_code=400,
+                            detail=f"chunks missing fields: {sorted(missing)}")
+
+    d = site_dir(sid)
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "chunks.json").write_text(
+        json.dumps(body.chunks, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    # embed now and put it straight into the live registry — no restart needed
+    chunks, vecs = embed_site(sid)
+    STATE["sites"][sid] = (chunks, vecs)
+
+    return {"site_id": sid, "chunks": len(chunks), "status": "indexed"}

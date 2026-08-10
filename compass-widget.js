@@ -21,6 +21,7 @@
   // ---- find our own <script> tag to read config ----
   const me = document.currentScript;
   const API = (me && me.dataset.api) || "https://compassai-vkoe.onrender.com";
+  const SITE = (me && me.dataset.site) || location.hostname;
 
   // ---- create an isolated host element ----
   const host = document.createElement("div");
@@ -152,12 +153,15 @@
       const res = await fetch(API + "/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: q }),
+        body: JSON.stringify({ query: q, site_id: SITE }),
       });
       const data = await res.json();
 
       if (!data.found) {
-        body.innerHTML = `<span class="muted">I couldn't find that on this page. Try rephrasing?</span>`;
+        const notRegistered = (data.reason || "").includes("not registered");
+        body.innerHTML = notRegistered
+          ? `<span class="muted">Compass isn't set up for this site yet.</span>`
+          : `<span class="muted">I couldn't find that on this page. Try rephrasing?</span>`;
         return;
       }
 
