@@ -1,15 +1,14 @@
 """
 api.py — multi-site HTTP layer for Compass.
 
-Loads every registered site's index at startup. Each /query carries a
-site_id so only that site's chunks are searched. New sites are added via
-POST /register (protected by ADMIN_TOKEN).
+Sites can be added three ways:
+  1. Pre-committed in sites/<site_id>/  (loaded at startup)
+  2. POST /register  (manual upload, admin-only)
+  3. POST /auto-register  (lightweight crawl on demand, called by widget)
 
-Crawling does NOT happen here — Playwright needs more memory than a free
-Render instance has. The crawl runs wherever there's room (your machine
-via register_site.py today, a dedicated crawl service later) and pushes
-the finished chunks to /register. Swapping to on-demand crawling later
-means changing who calls this endpoint, not the endpoint itself.
+The auto-register path uses requests + BS4 (no Playwright) so it fits
+Render's 512MB. Won't handle JS-rendered sites, but works for the
+majority of server-rendered pages.
 
 Usage:
     uvicorn api:app --reload
@@ -20,6 +19,7 @@ load_dotenv()
 
 import os
 import json
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -30,20 +30,20 @@ from groq import Groq
 
 from retrieval import load_all_sites, embed_site, site_dir, SITES_DIR, model
 from answer import answer
+from indexer import index_site
 
 STATE = {"sites": {}, "llm": None}
 
+# prevents two visitors from triggering parallel crawls of the same site
+_indexing_locks = {}
+_lock_guard = threading.Lock()
+
 
 def normalize_site_id(raw: str) -> str:
-    """
-    Hostnames vary: Example.COM, www.example.com, example.com:8080 are all
-    the same site to a visitor. Normalize so a site registered once matches
-    however the visitor arrived.
-    """
     s = (raw or "").strip().lower()
-    s = s.split("//")[-1]          # tolerate a full URL being passed
-    s = s.split("/")[0]            # drop any path
-    s = s.split(":")[0]            # drop port
+    s = s.split("//")[-1]
+    s = s.split("/")[0]
+    s = s.split(":")[0]
     if s.startswith("www."):
         s = s[4:]
     return s
@@ -77,7 +77,7 @@ app.add_middleware(
 
 class QueryIn(BaseModel):
     query: str
-    site_id: str
+    site_id: str = "openlake.in"
 
 
 class QueryOut(BaseModel):
@@ -101,6 +101,17 @@ class RegisterOut(BaseModel):
     status: str
 
 
+class AutoRegisterIn(BaseModel):
+    site_id: str
+
+
+class AutoRegisterOut(BaseModel):
+    site_id: str
+    chunks: int
+    status: str
+    message: str
+
+
 # ---------- endpoints ----------
 
 @app.get("/health")
@@ -122,17 +133,15 @@ def query(body: QueryIn):
     site = STATE["sites"].get(sid)
     if site is None:
         return {"found": False,
-                "reason": f"site '{sid}' is not registered with Compass"}
+                "reason": f"site '{sid}' is not registered with Compass",
+                "url": None, "selector": None, "heading": None,
+                "explanation": None, "confidence": None}
     chunks, vecs = site
     return answer(body.query, chunks, vecs, STATE["llm"])
 
 
 @app.post("/register", response_model=RegisterOut)
 def register(body: RegisterIn, x_admin_token: str = Header(default="")):
-    """
-    Add or replace a site's index. Expects already-crawled chunks, each with
-    url / page_title / heading / level / selector / content.
-    """
     expected = os.environ.get("ADMIN_TOKEN")
     if not expected or x_admin_token != expected:
         raise HTTPException(status_code=401, detail="invalid admin token")
@@ -154,8 +163,81 @@ def register(body: RegisterIn, x_admin_token: str = Header(default="")):
     (d / "chunks.json").write_text(
         json.dumps(body.chunks, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    # embed now and put it straight into the live registry — no restart needed
     chunks, vecs = embed_site(sid)
     STATE["sites"][sid] = (chunks, vecs)
-
     return {"site_id": sid, "chunks": len(chunks), "status": "indexed"}
+
+
+@app.post("/auto-register", response_model=AutoRegisterOut)
+def auto_register(body: AutoRegisterIn):
+    """
+    Lightweight auto-indexing: crawl with requests + BS4 (no Playwright),
+    chunk, embed, and make the site queryable — all in one request.
+    Called by the widget when it lands on an unregistered site.
+    """
+    sid = normalize_site_id(body.site_id)
+    if not sid:
+        raise HTTPException(status_code=400, detail="site_id required")
+
+    # already registered? skip
+    if sid in STATE["sites"]:
+        chunks, _ = STATE["sites"][sid]
+        return {"site_id": sid, "chunks": len(chunks),
+                "status": "already_indexed",
+                "message": "Site is already indexed."}
+
+    # dedup: if another request is already indexing this site, wait for it
+    with _lock_guard:
+        if sid not in _indexing_locks:
+            _indexing_locks[sid] = threading.Lock()
+        lock = _indexing_locks[sid]
+
+    if not lock.acquire(blocking=True, timeout=120):
+        raise HTTPException(status_code=503,
+                            detail="indexing in progress, try again shortly")
+
+    try:
+        # double-check after acquiring lock (another thread may have finished)
+        if sid in STATE["sites"]:
+            chunks, _ = STATE["sites"][sid]
+            return {"site_id": sid, "chunks": len(chunks),
+                    "status": "already_indexed",
+                    "message": "Site was indexed while waiting."}
+
+        print(f"[auto-register] crawling {sid}...")
+        raw_chunks = index_site(f"https://{sid}")
+
+        if not raw_chunks:
+            # try http if https failed
+            raw_chunks = index_site(f"http://{sid}")
+
+        if not raw_chunks:
+            return {"site_id": sid, "chunks": 0,
+                    "status": "failed",
+                    "message": "Could not crawl the site or no content found. "
+                               "The site may require JavaScript to render."}
+
+        # save to disk so it persists across restarts
+        d = site_dir(sid)
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "chunks.json").write_text(
+            json.dumps(raw_chunks, indent=2, ensure_ascii=False),
+            encoding="utf-8")
+
+        # embed and load into memory
+        chunks, vecs = embed_site(sid)
+        STATE["sites"][sid] = (chunks, vecs)
+
+        js_note = ""
+        if len(raw_chunks) < 5:
+            js_note = (" Note: very few sections found — if your site uses "
+                       "JavaScript rendering, some content may be missing.")
+
+        print(f"[auto-register] {sid} indexed: {len(chunks)} chunks")
+        return {"site_id": sid, "chunks": len(chunks),
+                "status": "indexed",
+                "message": f"Successfully indexed {len(chunks)} sections.{js_note}"}
+    finally:
+        lock.release()
+        with _lock_guard:
+            _indexing_locks.pop(sid, None)
