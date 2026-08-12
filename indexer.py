@@ -15,9 +15,13 @@ import time
 from collections import deque
 from urllib.parse import urljoin, urlparse, urldefrag
 from urllib.robotparser import RobotFileParser
-
+import hashlib
 import requests
 from bs4 import BeautifulSoup
+
+MIN_HEADING_CHUNKS = 3       # below this, fall back to text windows
+FB_WINDOW = 1200
+FB_OVERLAP = 150
 
 MAX_DEPTH = 3
 MAX_PAGES = 100
@@ -220,3 +224,49 @@ def index_site(root_url):
         c["id"] = i
 
     return all_chunks
+
+
+def chunk_html(html, url, title):
+    """Public wrapper: heading-based chunking of one rendered page."""
+    return _chunk_page(html, url, title)
+
+
+def _visible_text(html):
+    soup = BeautifulSoup(html, "html.parser")
+    for t in soup(["script", "style", "noscript"] + CHROME_TAGS):
+        t.decompose()
+    return re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
+
+
+def _chunk_text_fallback(text, url, title):
+    """Overlapping text windows for heading-less SPA pages."""
+    if len(text) < MIN_CHARS:
+        return []
+    out, start, n = [], 0, len(text)
+    while start < n:
+        end = min(start + FB_WINDOW, n)
+        window = text[start:end]
+        if end < n:
+            cut = window.rfind(". ")
+            if cut > FB_WINDOW // 2:
+                window = window[:cut + 1]
+                end = start + len(window)
+        out.append({
+            "url": url, "page_title": title,
+            "heading": title or url, "level": "p",
+            "selector": "",                       # no element anchor → page-level
+            "content": window.strip(),
+        })
+        if end >= n:
+            break
+        start = end - FB_OVERLAP
+    return out
+
+
+def chunk_rendered(html, url, title):
+    """Widget-supplied rendered HTML: prefer headings, fall back to text."""
+    heading_chunks = _chunk_page(html, url, title)
+    if len(heading_chunks) >= MIN_HEADING_CHUNKS:
+        return heading_chunks
+    fb = _chunk_text_fallback(_visible_text(html), url, title)
+    return heading_chunks if len(heading_chunks) >= len(fb) else fb
