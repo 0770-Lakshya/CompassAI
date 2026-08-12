@@ -16,7 +16,7 @@ Usage:
 
 from dotenv import load_dotenv
 load_dotenv()
-
+import hashlib
 import os
 import json
 import threading
@@ -31,6 +31,10 @@ from groq import Groq
 from retrieval import load_all_sites, embed_site, site_dir, SITES_DIR, model
 from answer import answer
 from indexer import index_site
+
+MAX_INGEST_BYTES = 3_000_000   # ~3MB rendered HTML cap (Render is 512MB)
+
+from indexer import chunk_rendered
 
 STATE = {"sites": {}, "llm": None}
 
@@ -241,3 +245,102 @@ def auto_register(body: AutoRegisterIn):
         lock.release()
         with _lock_guard:
             _indexing_locks.pop(sid, None)
+
+
+class IngestIn(BaseModel):
+    site_id: str
+    url: str
+    title: str | None = ""
+    html: str
+
+
+class IngestOut(BaseModel):
+    site_id: str
+    chunks: int
+    status: str
+    message: str
+
+
+def _get_site_lock(sid):
+    with _lock_guard:
+        return _indexing_locks.setdefault(sid, threading.Lock())
+
+
+def _read_json(sid, name, default):
+    p = site_dir(sid) / name
+    if p.exists():
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return default
+
+def _origin_ok(origin: str, sid: str) -> bool:
+    """
+    Anti-poisoning guard. Allow when: no Origin header (non-browser),
+    local dev (localhost/127.0.0.1/file://->"null"), or origin host
+    equals the site or is a subdomain of it. Not a hard boundary
+    (Origin is forgeable off-browser) but blocks casual browser poisoning.
+    """
+    if not origin:
+        return True
+    o = normalize_site_id(origin)
+    if o in ("localhost", "127.0.0.1", "null", ""):
+        return True
+    return o == sid or o.endswith("." + sid)
+
+
+@app.post("/ingest", response_model=IngestOut)
+def ingest(body: IngestIn, origin: str = Header(default="")):
+    sid = normalize_site_id(body.site_id)
+    if not _origin_ok(origin, sid):
+        raise HTTPException(status_code=403, detail="origin/site_id mismatch")
+
+    # Anti-poisoning: the browser stamps Origin on the cross-origin POST.
+    # Require it to match the site being written to. NOT a hard boundary
+    # (curl can forge Origin), but it blocks browser-based / casual poisoning.
+
+    if len(body.html.encode("utf-8")) > MAX_INGEST_BYTES:
+        raise HTTPException(status_code=413, detail="page too large")
+
+    url = body.url or f"https://{sid}"
+    page_hash = hashlib.sha256(body.html.encode("utf-8")).hexdigest()
+
+    lock = _get_site_lock(sid)
+    if not lock.acquire(blocking=True, timeout=60):
+        raise HTTPException(status_code=503, detail="busy, retry shortly")
+    try:
+        meta = _read_json(sid, "meta.json", {"hashes": {}})
+        if meta["hashes"].get(url) == page_hash:
+            cur = STATE["sites"].get(sid)
+            return {"site_id": sid, "chunks": len(cur[0]) if cur else 0,
+                    "status": "unchanged",
+                    "message": "Page already indexed at this version."}
+
+        page_chunks = chunk_rendered(body.html, url, body.title or "")
+        if not page_chunks:
+            return {"site_id": sid, "chunks": 0, "status": "empty",
+                    "message": "No indexable content on this page."}
+
+        # merge: replace this URL's chunks, keep the rest
+        merged = [c for c in _read_json(sid, "chunks.json", [])
+                  if c.get("url") != url]
+        merged.extend(page_chunks)
+        for i, c in enumerate(merged):
+            c["id"] = i
+
+        d = site_dir(sid)
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "chunks.json").write_text(
+            json.dumps(merged, indent=2, ensure_ascii=False), encoding="utf-8")
+        meta["hashes"][url] = page_hash
+        (d / "meta.json").write_text(
+            json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+
+        chunks, vecs = embed_site(sid)
+        STATE["sites"][sid] = (chunks, vecs)
+        print(f"[ingest] {sid} {url}: +{len(page_chunks)}, {len(chunks)} total")
+        return {"site_id": sid, "chunks": len(chunks), "status": "indexed",
+                "message": f"Indexed this page ({len(page_chunks)} sections)."}
+    finally:
+        lock.release()
