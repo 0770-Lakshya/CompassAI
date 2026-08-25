@@ -65,11 +65,17 @@ from bs4 import BeautifulSoup
 # async one, but for a sequential crawler the sync version is far easier to read
 # and there is nothing to gain from concurrency here — we are rate-limiting
 # ourselves on purpose anyway.
+<<<<<<< HEAD
 
 from playwright.sync_api import sync_playwright
 
 
 
+=======
+# read more: https://playwright.dev/python/docs/library
+from playwright.sync_api import sync_playwright
+
+>>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 MAX_DEPTH = 3
 MAX_PAGES = 200
 

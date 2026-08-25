@@ -1,6 +1,10 @@
 fastapi
 uvicorn
+<<<<<<< HEAD
 openai
+=======
+groq
+>>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 rapidfuzz
 numpy
 python-dotenv

@@ -66,6 +66,7 @@ import json
 
 from retrieval import search
 
+<<<<<<< HEAD
 # The model we call. Default is OpenRouter's free auto-router; override with
 # LLM_MODEL in .env to switch models OR providers without touching code:
 #
@@ -81,6 +82,17 @@ from retrieval import search
 #   * $10 of credits unlocks 1000 free-model requests/day
 # read more: https://openrouter.ai/models
 LLM_MODEL = os.environ.get("LLM_MODEL", "openrouter/free")
+=======
+# The model we call, hosted by Groq. Two reasons for this choice:
+#   * Groq runs models on custom LPU hardware and is dramatically faster than
+#     typical GPU inference — important, because a visitor is staring at a
+#     spinner while this runs.
+#   * The free tier is generous enough for a prototype with no card on file.
+# Llama 3.3 70B is an open-weights model, so it is also portable: if Groq
+# disappears, the same model runs on Together, Fireworks, or your own hardware.
+# read more: https://console.groq.com/docs/models
+LLM_MODEL = "llama-3.3-70b-versatile"
+>>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 
 # GATE 1's threshold, on the 0..1-ish scale produced by retrieval.search().
 #
@@ -179,7 +191,11 @@ def answer(query, chunks, vecs, llm):
     query  : the visitor's raw question, e.g. "where are the fees"
     chunks : that site's list of chunk dicts
     vecs   : that site's (N, 384) embedding matrix
+<<<<<<< HEAD
     llm    : an already-constructed OpenAI-compatible client pointing at OpenRouter (dependency injection — see note)
+=======
+    llm    : an already-constructed Groq client (dependency injection — see note)
+>>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 
     WHY IS THE LLM CLIENT PASSED IN RATHER THAN CREATED HERE?
     This is "dependency injection". Constructing a client involves reading env
@@ -230,6 +246,7 @@ def answer(query, chunks, vecs, llm):
     # ======================================================================
     #  GATE 2 — ask the model to judge relevance and write the explanation.
     # ======================================================================
+<<<<<<< HEAD
     # OpenRouter deliberately implements the OpenAI-compatible chat completions API
     # shape (`llm.chat.completions.create`), so this code would work against
     # OpenAI, Together, Fireworks, vLLM or a local Ollama server with only a
@@ -317,6 +334,64 @@ def answer(query, chunks, vecs, llm):
                       f"({type(e).__name__}: {str(e)[:120]})",
             "score": score,
         }
+=======
+    # Groq deliberately implements the OpenAI-compatible chat completions API
+    # shape (`llm.chat.completions.create`), so this code would work against
+    # OpenAI, Together, Fireworks, vLLM or a local Ollama server with only a
+    # base_url change. Avoiding vendor lock-in for free.
+    resp = llm.chat.completions.create(
+        model=LLM_MODEL,
+        messages=[
+            # The "system" role carries the persona and the rules. Models are
+            # trained to weight system instructions above anything appearing in
+            # the user turn, which also makes it modestly harder for text
+            # scraped off a website to override our instructions.
+            {"role": "system", "content": SYSTEM},
+
+            # The "user" role carries the DATA. Keeping instructions and data in
+            # separate roles is basic prompt hygiene and the first line of
+            # defence against prompt injection — remember, `content` here is
+            # text scraped from a third-party website that we do not control.
+            # read more: https://owasp.org/www-project-top-10-for-large-language-model-applications/
+            {"role": "user", "content": USER_TEMPLATE.format(
+                url=top["url"],
+                heading=top["heading"],
+                content=top["content"],
+                query=query,
+            )},
+        ],
+
+        # JSON MODE. The provider constrains token sampling so the output is
+        # guaranteed to be syntactically valid JSON. This is what lets the
+        # json.loads() below be written without a try/except — without this
+        # flag, models happily wrap JSON in ```json fences or add a friendly
+        # "Sure! Here you go:" preamble, and parsing becomes a guessing game.
+        # (Note it guarantees valid JSON, not the right SCHEMA — the shape still
+        #  comes from the prompt, which is why the prompt states it too.)
+        # read more: https://console.groq.com/docs/text-chat#json-mode
+        response_format={"type": "json_object"},
+
+        # Temperature controls randomness. 0 is fully deterministic (always the
+        # highest-probability token), 1.0+ is creative. We want near-determinism:
+        # this is a classification and summarisation task, and the same visitor
+        # asking the same question twice should get the same answer. We use 0.1
+        # rather than exactly 0 because a sliver of randomness helps models
+        # escape occasional degenerate repetition loops.
+        temperature=0.1,
+
+        # Hard cap on output length. The prompt already asks for under 30 words;
+        # this is the enforcement in case the model ignores it. It bounds cost
+        # and latency, and prevents a runaway generation from hanging a visitor.
+        max_tokens=200,
+    )
+
+    # Dig the text out of the OpenAI-shaped response envelope:
+    #   .choices     - list of alternative completions (we asked for one)
+    #   .message     - the assistant turn
+    #   .content     - the actual string
+    # json.loads is safe without a try/except purely because of JSON mode above.
+    parsed = json.loads(resp.choices[0].message.content)
+>>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 
     # GATE 2's verdict. `.get("found")` rather than `["found"]` because JSON mode
     # guarantees valid JSON but NOT that our key is present — a malformed

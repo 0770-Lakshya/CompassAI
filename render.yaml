@@ -4,6 +4,7 @@ services:
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+<<<<<<< HEAD
     # KEEP-ALIVE NOTE: Render's free tier sleeps after ~15 min without traffic,
     # making the first visitor wait ~50s on cold start. Point a free
     # UptimeRobot HTTP monitor at <this-url>/health every 5 min to stay warm.
@@ -33,3 +34,10 @@ services:
       # ---- admin token for POST /register and POST /refresh ---------------
       - key: ADMIN_TOKEN
         sync: false
+=======
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: VOYAGE_API_KEY
+        sync: false
+>>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
