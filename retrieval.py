@@ -56,10 +56,7 @@ Usage from api.py:
 """
 
 import json
-<<<<<<< HEAD
 import re
-=======
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -105,7 +102,6 @@ EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"   # 384-dim, ONNX
 W_SEMANTIC = 0.65
 W_LEXICAL = 0.35
 
-<<<<<<< HEAD
 # ---- the content-IDF signal --------------------------------------------------
 # A third retrieval signal: verbatim query tokens found inside chunk CONTENT,
 # weighted by token rarity (a miniature IDF over the site's own corpus).
@@ -132,8 +128,6 @@ import math
 
 W_CONTENT = 0.40
 
-=======
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 # ---- the heading-rank bonus -------------------------------------------------
 # A small additive nudge based on how important a heading is in the document.
 #
@@ -515,7 +509,6 @@ def search(query, chunks, vecs, k=3, debug=False):
         for c in chunks
     ])
 
-<<<<<<< HEAD
     # ---- SIGNAL 3: rare-token hits inside CONTENT (see W_CONTENT above) ---
     # Tokenise the filler-stripped query, then for each DISTINCT token compute
     # its document frequency across this site's chunk contents. The idf-style
@@ -556,24 +549,15 @@ def search(query, chunks, vecs, k=3, debug=False):
             cnt = present / matched
 
     # ---- SIGNAL 4: the structural rank bonus -----------------------------
-=======
-    # ---- SIGNAL 3: the structural rank bonus -----------------------------
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
     # `.get(key, 0.0)` rather than `[key]` so that an unexpected level value
     # (e.g. the "p" used by indexer.py's text-window fallback chunks) yields a
     # neutral 0.0 instead of raising KeyError.
     bonus = np.array([LEVEL_BONUS.get(c["level"], 0.0) for c in chunks])
 
     # ---- the blend -------------------------------------------------------
-<<<<<<< HEAD
     # All four are NumPy arrays of length N, so this single line does N
     # multiply-adds elementwise in C. No loop.
     combined = W_SEMANTIC * sem + W_LEXICAL * lex + W_CONTENT * cnt + bonus
-=======
-    # All three are NumPy arrays of length N, so this single line does N
-    # multiply-adds elementwise in C. No loop.
-    combined = W_SEMANTIC * sem + W_LEXICAL * lex + bonus
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 
     # ---- pick the winners ------------------------------------------------
     # np.argsort returns the INDICES that would sort the array ascending. NumPy
@@ -595,19 +579,11 @@ def search(query, chunks, vecs, k=3, debug=False):
         out.append((chunks[i], float(combined[i])))
 
         # The debug branch prints the individual signals side by side. This is
-<<<<<<< HEAD
         # the single most useful tool for tuning the weights: when a query
         # returns something wrong, this shows you immediately WHICH signal
         # misfired and therefore which knob to turn.
         if debug:
             print(f"    [{combined[i]:.3f}] sem={sem[i]:.3f} lex={lex[i]:.3f} "
                   f"cnt={cnt[i]:.2f}  "
-=======
-        # the single most useful tool for tuning W_SEMANTIC / W_LEXICAL: when a
-        # query returns something wrong, this shows you immediately WHICH signal
-        # misfired and therefore which knob to turn.
-        if debug:
-            print(f"    [{combined[i]:.3f}] sem={sem[i]:.3f} lex={lex[i]:.3f}  "
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
                   f"{chunks[i]['heading'][:40]}  ({chunks[i]['url']})")
     return out

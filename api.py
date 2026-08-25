@@ -65,10 +65,7 @@ import hashlib      # SHA-256, used to detect whether a page's HTML changed
 import os           # environment variables
 import json         # reading/writing chunks.json and meta.json
 import threading    # locks, to stop two visitors triggering the same crawl twice
-<<<<<<< HEAD
 import time         # sleeping in the periodic re-index loop
-=======
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 
 # asynccontextmanager turns a generator function into an async context manager.
 # FastAPI's `lifespan` uses it: everything before `yield` runs at startup,
@@ -80,18 +77,12 @@ from pathlib import Path
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-<<<<<<< HEAD
 # OpenRouter is OpenAI-compatible: the chat.completions.create(...) call in
 # answer.py works against it unchanged. We only swap the client + base_url.
 # read more: https://openrouter.ai/docs
 from openai import OpenAI  # type: ignore[import-not-found]
 
 from retrieval import load_all_sites, embed_site, site_dir, SITES_DIR, model, load_site
-=======
-from groq import Groq
-
-from retrieval import load_all_sites, embed_site, site_dir, SITES_DIR, model
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 from answer import answer
 from indexer import index_site
 
@@ -109,11 +100,7 @@ from indexer import chunk_rendered
 #  STATE — the entire in-memory database of the running server.
 #
 #    STATE["sites"] = { "openlake.in": (chunks_list, vectors_matrix), ... }
-<<<<<<< HEAD
 #    STATE["llm"]   = the shared OpenRouter-backed OpenAI client
-=======
-#    STATE["llm"]   = the shared Groq client
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 #
 #  WHY A MODULE-LEVEL DICT RATHER THAN GLOBALS?
 #  A dict can be MUTATED from inside a function without needing the `global`
@@ -128,7 +115,6 @@ from indexer import chunk_rendered
 # ============================================================================
 STATE = {"sites": {}, "llm": None}
 
-<<<<<<< HEAD
 # ---- the /query answer cache ------------------------------------------------
 # WHY THIS EXISTS
 # Real visitor traffic is extremely repetitive: on a college-club site, "fees",
@@ -192,8 +178,6 @@ def _site_data_fresh(sid):
         # down just because one on-disk file is mid-write or corrupt.
         print(f"[hot-reload] {sid} failed, keeping memory copy: {e}")
 
-=======
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 # ---- concurrency control ----------------------------------------------------
 # THE PROBLEM: /auto-register kicks off a crawl that can take 30+ seconds. If
 # ten visitors land on an unindexed site at the same moment, ten crawls start in
@@ -274,7 +258,6 @@ async def lifespan(app: FastAPI):
     for the same resource sit next to each other in one function.
     read more: https://fastapi.tiangolo.com/advanced/events/#lifespan
     """
-<<<<<<< HEAD
     # Any OpenAI-compatible provider works here. The default is OpenRouter;
     # set LLM_BASE_URL in .env to switch providers without touching code:
     #   OpenRouter ... https://openrouter.ai/api/v1
@@ -298,20 +281,12 @@ async def lifespan(app: FastAPI):
         key = os.environ.get("LLM_API_KEY")
 
     if not key and not is_local:
-=======
-    key = os.environ.get("GROQ_API_KEY")
-    if not key:
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
         # FAIL FAST, AND LOUDLY. Raising here prevents the server from starting
         # at all. The alternative — booting fine and then 500-ing on the first
         # real query — is far worse: it turns a config mistake you would catch
         # in ten seconds at deploy time into a mystery outage in production.
-<<<<<<< HEAD
         raise RuntimeError("No LLM API key found. Set LLM_API_KEY in .env "
                            "(or OPENROUTER_API_KEY when using OpenRouter).")
-=======
-        raise RuntimeError("Set GROQ_API_KEY before starting the server.")
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 
     print("warming embedder + loading sites...")
 
@@ -322,7 +297,6 @@ async def lifespan(app: FastAPI):
 
     STATE["sites"] = load_all_sites()
 
-<<<<<<< HEAD
     # Record the mtimes we just loaded so hot-reload only fires on real changes.
     for sid in STATE["sites"]:
         d = site_dir(sid)
@@ -415,15 +389,6 @@ async def lifespan(app: FastAPI):
     else:
         print("[refresher] disabled (REFRESH_HOURS=0)")
 
-=======
-    # Build the Groq HTTP client once. It maintains a connection pool
-    # internally, so reusing it across requests avoids re-doing TCP and TLS
-    # handshakes on every single query.
-    STATE["llm"] = Groq(api_key=key)
-
-    print(f"ready. {len(STATE['sites'])} site(s): {list(STATE['sites'])}")
-
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
     # `yield` hands control to FastAPI, which now serves requests. Execution
     # resumes on the line below only when the server is shutting down.
     yield
@@ -596,7 +561,6 @@ def query(body: QueryIn):
 
     # Unpack the stored 2-tuple and hand this site's data — and only this site's
     # data — to the answer pipeline. This is where tenant isolation happens.
-<<<<<<< HEAD
     # _site_data_fresh first: if someone re-indexed this site on disk since
     # boot (rebuild_site.py, /refresh from another process, hand edit), we
     # pick up the new index here without a restart.
@@ -623,10 +587,6 @@ def query(body: QueryIn):
             _query_cache.clear()
         _query_cache[key] = result
     return result
-=======
-    chunks, vecs = site
-    return answer(body.query, chunks, vecs, STATE["llm"])
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 
 
 @app.post("/register", response_model=RegisterOut)
@@ -851,7 +811,6 @@ def auto_register(body: AutoRegisterIn):
 
 
 # =============================================================================
-<<<<<<< HEAD
 #  /refresh — PERIODIC RE-INDEXING ("the index re-trains itself")
 # =============================================================================
 #
@@ -970,8 +929,6 @@ def _start_refresher(hours):
 
 
 # =============================================================================
-=======
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 #  /ingest — THE CLEVEREST ENDPOINT IN THE PROJECT. Read this section carefully.
 # =============================================================================
 #
@@ -1079,7 +1036,6 @@ def _origin_ok(origin: str, sid: str) -> bool:
     # Development allowances. "null" is what browsers send as the Origin for a
     # page opened directly from disk via file:// — that is how you would test
     # the widget against a saved HTML file locally.
-<<<<<<< HEAD
     #
     # LOCALHOST POISONING GUARD: a localhost origin may only write to a
     # localhost site. Without this, the widget running on a developer's test
@@ -1090,9 +1046,6 @@ def _origin_ok(origin: str, sid: str) -> bool:
     if o in ("localhost", "127.0.0.1"):
         return sid in ("localhost", "127.0.0.1")
     if o in ("null", ""):
-=======
-    if o in ("localhost", "127.0.0.1", "null", ""):
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
         return True
 
     # Exact match, or a subdomain. The "." in `"." + sid` is essential: without

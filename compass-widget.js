@@ -548,7 +548,6 @@
     //   https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
     setTimeout(() => highlight(pending), 600);
   }
-<<<<<<< HEAD
 
   // ======================================================================
   //  INGEST — the widget's half of index self-healing
@@ -598,6 +597,4 @@
       }).catch(() => {});   // network errors are none of the visitor's business
     } catch (e) { /* never let indexing break the host page */ }
   }, 2500);
-=======
->>>>>>> c0f06ae31c59b24853a752e27125702c04a97969
 })();
