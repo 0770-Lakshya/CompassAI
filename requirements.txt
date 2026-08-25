@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+openai
+rapidfuzz
+numpy
+python-dotenv
+fastembed
+beautifulsoup4

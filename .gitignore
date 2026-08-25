@@ -1,0 +1,10 @@
+pages/
+chunks.json
+embeddings.npy
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.vscode/
+.idea/
