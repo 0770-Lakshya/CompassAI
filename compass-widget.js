@@ -251,6 +251,24 @@
            read more: https://developer.mozilla.org/en-US/docs/Web/CSS/calc */
         max-width: calc(100vw - 48px);
 
+        /* ---- THE HEIGHT BOUND, and why it is not optional ----------------
+           Without a max-height the panel grows to fit whatever the LLM
+           returned. A four-line answer made it 334px tall; anchored at
+           bottom:92px that needs 426px of viewport. A phone with the keyboard
+           open has roughly 400px, so the panel's top went NEGATIVE (-26px)
+           and the "Ask Compass" header was clipped off the top of the screen.
+
+           'dvh' is the DYNAMIC viewport height: it tracks the viewport as
+           mobile browser UI (address bar, keyboard) appears and disappears,
+           which is exactly the thing that broke here. 'vh' famously does not —
+           it keeps reporting the tallest possible viewport. The '100vh' line
+           below it is the fallback for browsers without dvh support; a later
+           declaration of the same property wins where supported, so ordering
+           gives us progressive enhancement for free.
+           read more: https://developer.mozilla.org/en-US/docs/Web/CSS/length#relative_length_units_based_on_viewport */
+        max-height: calc(100vh - 116px);
+        max-height: calc(100dvh - 116px);
+
         background: #fff; border-radius: 14px; z-index: 2147483647;
         box-shadow: 0 8px 32px rgba(0,0,0,.22);
 
@@ -265,24 +283,61 @@
          source of truth — see the toggle handler below. */
       .panel.open { display: flex; }
 
+      /* flex-shrink: 0 pins the header and the input row at their natural
+         size, so that when the panel hits its max-height it is the ANSWER
+         that gives way, not the controls. Without this, flex would happily
+         squash the input row to nothing and the Go button would vanish. */
       .head {
         background: #1f6f5c; color: #fff; padding: 14px 16px;
-        font-weight: 600; font-size: 15px;
+        font-weight: 600; font-size: 15px; flex-shrink: 0;
       }
       .head small { display: block; font-weight: 400; opacity: .8; font-size: 12px; margin-top: 2px; }
 
       /* min-height stops the panel from visibly jumping in size as the answer
-         text changes length — a small detail that makes it feel less janky. */
-      .body { padding: 14px 16px; min-height: 60px; font-size: 14px; color: #1a1a1a; line-height: 1.5; }
+         text changes length — a small detail that makes it feel less janky.
+
+         THE SCROLL CONTAINER. 'flex: 1' lets this absorb the leftover height
+         and 'overflow-y: auto' gives a long answer its own scrollbar instead
+         of pushing the panel past the top of the screen. 'min-height: 0' is
+         the non-obvious one and is genuinely required: a flex item's default
+         min-height is 'auto', which means "never shrink below my content" —
+         it would override the overflow and defeat the whole arrangement. This
+         is the single most common flexbox-scrolling gotcha.
+         read more: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout/Mastering_wrapping_of_flex_items */
+      .body {
+        padding: 14px 16px; min-height: 60px; font-size: 14px;
+        color: #1a1a1a; line-height: 1.5;
+        flex: 1; min-height: 0; overflow-y: auto;
+
+        /* Long unbroken strings (a URL in an answer) would otherwise force the
+           panel wider than the screen. */
+        overflow-wrap: break-word;
+
+        /* Keeps a flick-scroll inside the panel from scrolling the host page
+           once the answer hits its end.
+           read more: https://developer.mozilla.org/en-US/docs/Web/CSS/overscroll-behavior */
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
       .body .muted { color: #6b7280; }
       .body a { color: #1f6f5c; }
 
-      .inputRow { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #eee; }
+      .inputRow { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #eee; flex-shrink: 0; }
       /* flex: 1 makes the input absorb all leftover width, so the Go button
-         keeps its natural size and the input grows to fill the rest. */
+         keeps its natural size and the input grows to fill the rest.
+         'min-width: 0' again defeats the 'auto' minimum — without it a long
+         typed question would push the Go button off the panel's edge. */
       .inputRow input {
-        flex: 1; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px;
-        font-size: 14px; outline: none;
+        flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid #d1d5db;
+        border-radius: 8px; outline: none;
+
+        /* 16px, NOT 14px, and this is a functional requirement rather than a
+           style choice: iOS Safari automatically zooms the whole page in when
+           you focus an input whose font-size is below 16px. That zoom shifts
+           the entire fixed-position layout and is a classic way for a mobile
+           widget to look "broken" the instant the keyboard opens. 16px is the
+           documented threshold that suppresses it. */
+        font-size: 16px;
       }
       /* We removed the default focus outline above, so we MUST provide our own
          focus indication — otherwise keyboard users cannot see where they are.
@@ -291,12 +346,67 @@
       .inputRow button {
         border: none; background: #1f6f5c; color: #fff; border-radius: 8px;
         padding: 0 14px; cursor: pointer; font-size: 14px;
+
+        /* Never let the Go button be squeezed by a long question — it is the
+           only way to submit by tap. */
+        flex-shrink: 0; white-space: nowrap;
       }
       /* Visual feedback for the disabled state used while a request is in
          flight (see ask()), so the user can see why clicking does nothing. */
       .inputRow button:disabled { opacity: .5; cursor: default; }
 
-      .foot { text-align: center; font-size: 11px; color: #9ca3af; padding: 6px; }
+      .foot { text-align: center; font-size: 11px; color: #9ca3af; padding: 6px; flex-shrink: 0; }
+
+      /* ==================================================================
+         PHONES
+         ==================================================================
+         Below 480px the desktop geometry stops making sense: a 340px panel
+         inset 24px from the right leaves cramped margins, and the 56px FAB
+         eats a large share of the screen. So the panel becomes a near
+         full-width sheet pinned to both edges, and everything shrinks a
+         little.
+
+         'env(safe-area-inset-*)' is the iPhone notch/home-indicator
+         allowance. On a device without insets these resolve to 0px, so the
+         calc degrades to exactly the old value — which is why it is safe to
+         apply unconditionally rather than sniffing for iOS.
+         read more: https://developer.mozilla.org/en-US/docs/Web/CSS/env */
+      @media (max-width: 480px) {
+        .fab {
+          width: 48px; height: 48px; font-size: 20px;
+          right: max(16px, env(safe-area-inset-right));
+          bottom: calc(16px + env(safe-area-inset-bottom));
+        }
+        .panel {
+          /* Pinning left AND right and letting width be auto is what makes it
+             a full-width sheet; 'width: 340px' would fight this, so it is
+             overridden back to auto. */
+          left: max(12px, env(safe-area-inset-left));
+          right: max(12px, env(safe-area-inset-right));
+          width: auto; max-width: none;
+          bottom: calc(76px + env(safe-area-inset-bottom));
+          max-height: calc(100vh - 108px - env(safe-area-inset-bottom));
+          max-height: calc(100dvh - 108px - env(safe-area-inset-bottom));
+        }
+        .head { padding: 12px 14px; font-size: 14px; }
+        .body { padding: 12px 14px; }
+        .inputRow { padding: 10px 12px; }
+      }
+
+      /* Very short viewports — a landscape phone, or any phone with the
+         on-screen keyboard open. Trim the chrome so the answer keeps as much
+         room as possible, and drop the footer entirely: it is decoration, and
+         decoration is what should go first when space runs out. */
+      @media (max-height: 450px) {
+        .panel {
+          bottom: calc(12px + env(safe-area-inset-bottom));
+          max-height: calc(100vh - 24px);
+          max-height: calc(100dvh - 24px);
+        }
+        .head { padding: 8px 14px; }
+        .head small { display: none; }
+        .foot { display: none; }
+      }
     </style>
 
     <button class="fab" title="Ask Compass">🧭</button>
