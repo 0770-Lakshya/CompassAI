@@ -77,6 +77,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse   # serves compass-widget.js
 from pydantic import BaseModel
 # OpenRouter is OpenAI-compatible: the chat.completions.create(...) call in
 # answer.py works against it unchanged. We only swap the client + base_url.
@@ -582,6 +583,57 @@ def sites():
     say this site is not set up' — you can see instantly whether the id the
     widget derived matches the id the server stored."""
     return {"sites": list(STATE["sites"].keys())}
+
+
+# Resolved once, at import, relative to THIS file rather than the working
+# directory. A service started from a different cwd (systemd, a container, a
+# `cd` in a start script) would otherwise fail to find the widget.
+WIDGET_PATH = Path(__file__).resolve().parent / "compass-widget.js"
+
+
+@app.get("/widget.js")
+def widget_js():
+    """
+    Serve the embeddable widget itself, so a site owner needs exactly one line
+    of HTML and no copy of any file:
+
+        <script src="https://<this-host>/widget.js" defer></script>
+
+    WHY THIS BEATS COPYING THE FILE INTO EACH SITE
+    ----------------------------------------------
+    The widget is the only piece of Compass that lives on someone else's
+    server. Every copy is a version that can drift, and fixing a bug in it
+    means chasing down every site that has a stale one — including sites whose
+    HTML you may not control. Serving it from here makes the API the single
+    source of truth: deploy once, every embedder gets the fix.
+
+    THE FLIP SIDE, STATED HONESTLY: that same property means a bad widget
+    deploy breaks every site at once, and every site now depends on this
+    service being up for its widget to load at all. That is the trade being
+    made, and it is the right one at this scale — but it is a trade.
+
+    CACHING. `max-age=3600` lets browsers reuse the file for an hour instead of
+    re-fetching it on every page view. The tension is real: too long and a
+    fix takes ages to reach visitors, too short and we pay for a request we
+    did not need. An hour is the compromise; content-hashed filenames are the
+    grown-up answer when this starts to matter.
+    read more: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching
+
+    Note the deliberate absence of an Origin check. This is a public static
+    asset — it must load on any site, which is exactly the point.
+    """
+    if not WIDGET_PATH.exists():
+        # 404 rather than a 500 traceback: the file is genuinely not here, and
+        # saying so plainly is what makes a broken deploy obvious in one curl.
+        raise HTTPException(status_code=404, detail="widget not found")
+    return FileResponse(
+        WIDGET_PATH,
+        # Browsers refuse to execute a <script> served with the wrong type
+        # under nosniff, so state it explicitly rather than trusting the
+        # extension-to-mimetype guess.
+        media_type="application/javascript",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 @app.post("/query", response_model=QueryOut)

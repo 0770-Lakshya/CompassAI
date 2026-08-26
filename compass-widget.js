@@ -93,6 +93,61 @@
   // normalize_site_id() so "www." and casing do not matter.
   const SITE = (me && me.dataset.site) || location.hostname;
 
+  // ======================================================================
+  //  HASH-ROUTE AWARENESS            For Mess webiste   
+  // ======================================================================
+  //  Some SPAs (React Router's HashRouter, Vue's hash mode) put the ROUTE in
+  //  the fragment: https://site.com/#/menu, https://site.com/#/committee.
+  //  Those are genuinely different pages with different content.
+  //
+  //  A plain anchor — https://site.com/team#leads — is NOT. It is the same
+  //  document scrolled to a spot inside it.
+  //
+  //  Everything below hangs on telling those two apart, and the test is
+  //  simply whether the fragment starts with "#/". Get this wrong in the
+  //  permissive direction and every anchor link becomes a separate entry in
+  //  the index; get it wrong in the strict direction and a hash-routed site
+  //  collapses into a single page. Hence one helper, used everywhere.
+  //
+  //  read more: https://developer.mozilla.org/en-US/docs/Web/API/Location/hash
+
+  // Is this fragment a ROUTE (a distinct page) rather than an anchor?
+  // "#/" alone is the SPA's root and is equivalent to no hash at all, so it
+  // does not count — otherwise the home page would index under two names.
+  function isRouteHash(h) {
+    return typeof h === "string" && h.startsWith("#/") && h !== "#/";
+  }
+
+  // The canonical URL for the page currently on screen — the identity we
+  // index under and compare against.
+  //
+  // NOTE FOR PATH-ROUTED SITES: when there is no route hash this returns
+  // exactly `location.href.split("#")[0]`, which is byte-for-byte what this
+  // widget sent before hash support existed. That is deliberate — sites like
+  // openlake.in must keep indexing under the same URLs they already use, or
+  // their existing chunks would be orphaned.
+  function routeUrl() {
+    const base = location.href.split("#")[0];
+    return isRouteHash(location.hash) ? base + location.hash : base;
+  }
+
+  // Do two URLs point at the same page? Normalises both sides the same way:
+  // drop non-route fragments, then drop trailing slashes so "/about/" and
+  // "/about" match. Order matters — strip the fragment FIRST, or the slash
+  // rule would be looking at the wrong end of the string.
+  function sameRoute(a, b) {
+    const clean = (u) => {
+      if (!u) return "";
+      let s = String(u).trim();
+      const i = s.indexOf("#");
+      let hash = "";
+      if (i !== -1) { hash = s.slice(i); s = s.slice(0, i); }
+      if (!isRouteHash(hash)) hash = "";
+      return s.replace(/\/+$/, "") + hash;
+    };
+    return clean(a) === clean(b);
+  }
+
   // ---- create an isolated host element ----
   const host = document.createElement("div");
   host.id = "compass-widget-host";
@@ -376,6 +431,40 @@
     return true;                          // caller uses this to pick a message
   }
 
+  // ======================================================================
+  //  highlight(), but patient.
+  // ======================================================================
+  //  highlight() asks the DOM one question, once. That is fine when the page
+  //  is already rendered — but after a client-side route change the framework
+  //  has not necessarily painted the new page yet, and the element we want
+  //  does not exist for another few hundred milliseconds. Asking once, too
+  //  early, fails at exactly the moment the visitor is waiting for the payoff.
+  //
+  //  The old fix was a fixed `setTimeout(..., 600)`: a guess that is
+  //  simultaneously too long on a fast page and too short on a slow one. (The
+  //  mess site, for instance, shows a 350ms loader on every route change,
+  //  which leaves 600ms uncomfortably tight.)
+  //
+  //  So: poll instead. Try immediately, then keep retrying on a short
+  //  interval until the element shows up or we run out of budget. Success
+  //  becomes as fast as the page allows, and slow pages still work.
+  //
+  //  Returns a PROMISE of the boolean, because the answer is no longer
+  //  available synchronously. Callers must await it.
+  function highlightWhenReady(selector, budgetMs) {
+    const deadline = Date.now() + (budgetMs || 3000);
+    return new Promise((resolve) => {
+      const attempt = () => {
+        // Try first, wait second. On an already-rendered page this resolves
+        // on the very first tick with no delay at all.
+        if (highlight(selector)) return resolve(true);
+        if (Date.now() >= deadline) return resolve(false);
+        setTimeout(attempt, 120);
+      };
+      attempt();
+    });
+  }
+
   // ---- ask the API ----
   // `async` lets us use `await` and write the network call as straight-line
   // code instead of nested .then() callbacks.
@@ -597,7 +686,23 @@
   //  The delay lets SPA frameworks finish hydrating, so we capture rendered
   //  content rather than an empty <div id="root">. Same trade-off as WAIT_MS
   //  in crawler_js.py: dumb but universal.
-  setTimeout(() => {
+
+  // The last URL we actually posted. Guards against re-sending the identical
+  // page when a route change fires more than once (frameworks are not shy
+  // about that) — the server would answer "unchanged" anyway, but the cheapest
+  // request is the one never sent.
+  let lastIngestedUrl = null;
+
+  // Route changes can arrive in bursts. Debouncing means we capture the DOM
+  // once, after it settles, rather than once per intermediate state.
+  let ingestTimer = null;
+
+  function scheduleIngest(delayMs) {
+    clearTimeout(ingestTimer);
+    ingestTimer = setTimeout(doIngest, delayMs == null ? 2500 : delayMs);
+  }
+
+  function doIngest() {
     try {
       // ONLY INGEST WHEN THE PAGE REALLY BELONGS TO THIS SITE.
       // SITE defaults to location.hostname, so on a genuine deployment they
@@ -608,23 +713,49 @@
         .split("//").pop().split("/")[0].split(":")[0].replace(/^www\./, "");
       if (norm(location.hostname) !== norm(SITE)) return;
 
+      // ---- THE URL WE INDEX UNDER --------------------------------------
+      // This used to be `location.href.split("#")[0]`, which unconditionally
+      // threw the fragment away. On a HashRouter site that is destructive,
+      // not merely lossy: /ingest treats `url` as the primary key and REPLACES
+      // every chunk sharing it, so "#/menu", "#/committee" and "#/contact" all
+      // arrived as the bare origin and each visit wiped out the previous
+      // route's content. The index could never hold more than one page, and
+      // thrashed — re-embedding on every single navigation.
+      //
+      // routeUrl() keeps a route fragment and still drops a plain anchor, so
+      // hash-routed sites get one entry per route while path-routed sites keep
+      // indexing under exactly the URLs they always have.
+      const url = routeUrl();
+
+      // Same page as last time? Nothing to say.
+      if (url === lastIngestedUrl) return;
+
       const html = document.documentElement.outerHTML;
       // Client-side mirror of the server's size cap — saves everyone the
       // bandwidth when a pathological page somehow exceeds it.
       if (!html || html.length > 3_000_000) return;
+
+      lastIngestedUrl = url;
       fetch(API + "/ingest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           site_id: SITE,
-          url: location.href.split("#")[0],
+          url: url,
           title: document.title || "",
           html: html,
         }),
         // keepalive lets the request complete even if the visitor navigates
         // away mid-send — exactly the case on fast cross-page browsing.
         keepalive: true,
-      }).catch(() => {});   // network errors are none of the visitor's business
+      }).catch(() => {
+        // Network errors are none of the visitor's business — but do forget
+        // the URL, so a later visit to this page gets another chance to index
+        // it rather than being suppressed by the dedupe guard forever.
+        lastIngestedUrl = null;
+      });
     } catch (e) { /* never let indexing break the host page */ }
-  }, 2500);
+  }
+
+  scheduleIngest();
 })();
