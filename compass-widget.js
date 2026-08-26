@@ -542,17 +542,25 @@
       }
 
       // ---- is the answer on the page we are already looking at? ----
-      // Both sides are normalised before comparing:
-      //   .replace(/\/$/, "")  strips a trailing slash, so "/about/" == "/about"
-      //   .split("#")[0]       drops any fragment, so "/about#team" == "/about"
-      // Without both, a same-page answer would be misread as a different page
-      // and the visitor would be shown a pointless link to where they already are.
-      const samePage =
-        !data.url || data.url.replace(/\/$/, "") === location.href.replace(/\/$/, "").split("#")[0];
+      // sameRoute() normalises both sides identically: non-route fragments are
+      // dropped so "/about#team" == "/about", trailing slashes are dropped so
+      // "/about/" == "/about", but a ROUTE fragment is KEPT so that "#/menu"
+      // and "#/committee" are correctly seen as different pages.
+      //
+      // WHY THE HASH MUST SURVIVE HERE: the previous version stripped the
+      // fragment off both sides, which on a HashRouter site made every URL
+      // look like the bare origin — so `samePage` was always true. The widget
+      // would then try to highlight a "#/committee" element while standing on
+      // "#/menu", find nothing, and tell the visitor it could not locate it —
+      // never offering the navigation link that was the whole point.
+      //
+      // `!data.url` still short-circuits to true: an answer with no URL is by
+      // definition about the page in front of us.
+      const samePage = !data.url || sameRoute(data.url, routeUrl());
 
       if (samePage) {
         // THE GOOD PATH: scroll and highlight, right now.
-        const ok = highlight(data.selector);
+        const ok = await highlightWhenReady(data.selector, 1500);
 
         // Note the message depends on whether the highlight actually succeeded.
         // If the selector no longer resolves (the site changed since indexing)
@@ -643,30 +651,65 @@
 
   // ======================================================================
   //  RESUME AFTER CROSS-PAGE NAVIGATION
-  //  The second half of the sessionStorage handoff started in ask(). This runs
-  //  on EVERY page load, and almost always finds nothing — but when the visitor
-  //  has just clicked "Take me there →", this is what completes the journey.
+  //  The second half of the sessionStorage handoff started in ask(). Runs on
+  //  every page load, and now also after a hash route change — almost always
+  //  finding nothing, but when the visitor has just clicked "Take me there →"
+  //  this is what completes the journey.
   // ======================================================================
-  const pending = sessionStorage.getItem("compass_target");
-  if (pending) {
+  function consumePending() {
+    let pending = null;
+    try {
+      pending = sessionStorage.getItem("compass_target");
+    } catch (e) {
+      // sessionStorage throws outright in some privacy modes and sandboxed
+      // frames. Losing the handoff is a small degradation; throwing here would
+      // take the whole widget down on the host's page.
+      return;
+    }
+    if (!pending) return;
+
     // REMOVE IT IMMEDIATELY, before using it. If we removed it afterwards and
     // something below threw, the stale target would persist and hijack the next
     // page load too. Consume-then-act is the safe ordering for a one-shot token.
-    sessionStorage.removeItem("compass_target");
+    try { sessionStorage.removeItem("compass_target"); } catch (e) {}
 
-    // wait a beat for the new page to finish rendering
-    // ------------------------------------------------------------------
-    // WHY THE DELAY: this script runs as soon as it is parsed, but on a React
-    // or Next.js site the target element may not exist yet — the framework is
-    // still hydrating. Scrolling immediately would find nothing and silently
-    // fail, right at the moment the user is expecting the payoff.
-    //
-    // 600ms is a pragmatic guess, the same species of trade-off as WAIT_MS in
-    // crawler_js.py. The robust version would poll, or use a MutationObserver
-    // to react the instant the element appears:
-    //   https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
-    setTimeout(() => highlight(pending), 600);
+    // Poll rather than guess at a delay. This script runs as soon as it is
+    // parsed, and on a React or Next.js site the target element may not exist
+    // yet — the framework is still hydrating. The old fixed 600ms could be
+    // both too slow (on a fast page) and too short (on a slow one); the
+    // budget here is generous because a fresh page load is the slowest case
+    // we ever face, and a poll that finishes early costs nothing.
+    highlightWhenReady(pending, 5000);
   }
+  consumePending();
+
+  // ======================================================================
+  //  HASH ROUTE CHANGES
+  // ======================================================================
+  //  On a HashRouter site, clicking "Take me there →" changes only the
+  //  fragment. That is NOT a page load: the script is never re-executed, so
+  //  the consumePending() call above — which runs once, at parse time — never
+  //  gets a second chance. Without this listener the widget would navigate the
+  //  visitor to the right route and then just sit there, having forgotten why.
+  //
+  //  It is also the only thing that indexes routes beyond the first: the
+  //  ingest below is scheduled once at load, so without a re-trigger a visitor
+  //  who browses from "/" to "#/menu" to "#/committee" would index only "/".
+  //
+  //  WHY `hashchange` AND DELIBERATELY NOT `popstate` OR A pushState PATCH:
+  //  this is a blast-radius decision, not an oversight. `hashchange` fires
+  //  only when the fragment changes, which is precisely the hash-routing case
+  //  and never happens on a path-routed site. `popstate` and a patched
+  //  pushState would ALSO fire on every client-side navigation in Next.js —
+  //  quietly switching on new indexing behaviour for existing sites like
+  //  openlake.in, whose index was built by a controlled crawl and is working
+  //  as it is. Narrow the trigger to the case you actually need.
+  //
+  //  read more: https://developer.mozilla.org/en-US/docs/Web/API/Window/hashchange_event
+  window.addEventListener("hashchange", () => {
+    consumePending();
+    scheduleIngest();
+  });
 
   // ======================================================================
   //  INGEST — the widget's half of index self-healing
