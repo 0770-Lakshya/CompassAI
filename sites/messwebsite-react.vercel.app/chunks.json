@@ -1,0 +1,362 @@
+[
+  {
+    "url": "https://messwebsite-react.vercel.app/",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "PAKADAR PANALAYA",
+    "level": "h1",
+    "selector": "#root > div > main > div > section:nth-of-type(1) > div:nth-of-type(4) > div > h1",
+    "content": "PAKADAR PANALAYA. The official dining portal of IIT Bhilai — live menu, weekly schedule and your student mess committee, all in one place. Live Menu Meet the Team 📸 Gallery v 🍽️ Fresh & Served Upcoming Dinner — 8:00 PM - 10:00 PM 🍽️ Veg Mode Off Official dignities who run the mess DS Dean of Student Affairs, IIT Bhilai 🎓  FIC and Associate Faculty DY Faculty In-Charge (FIC), Mess DM Associate FIC Mess, IIT Bhilai 👥 Mess Coordinator & President AR President ,COSA IIT Bhilai MK Mess Coordinator, IIT Bhilai Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai. IIT BHILAI Polaris - IIT Bhilai Home Today's Menu Weekly Menu Committee Members Contact Mess Office, Mess Block IIT Bhilai Campus, Kutelabhata, Bhilai, Chhattisgarh 491002 messcoordinator@iitbhilai.ac.in © 2026 IIT Bhilai Mess Committee. All rights reserved.",
+    "id": 0
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Live Menu — Thursday",
+    "level": "h2",
+    "selector": "#live-menu > div:nth-of-type(1) > h2",
+    "content": "Live Menu — Thursday. Upcoming Dinner — 8:00 PM - 10:00 PM 🍽️ Veg Mode Off",
+    "id": 1
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Meet the Team Behind Mess",
+    "level": "h2",
+    "selector": "#root > div > main > div > section:nth-of-type(4) > h2",
+    "content": "Meet the Team Behind Mess. Official dignities who run the mess DS Dean of Student Affairs, IIT Bhilai 🎓  FIC and Associate Faculty DY Faculty In-Charge (FIC), Mess DM Associate FIC Mess, IIT Bhilai 👥 Mess Coordinator & President AR President ,COSA IIT Bhilai MK Mess Coordinator, IIT Bhilai Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai. IIT BHILAI Polaris - IIT Bhilai Home Today's Menu Weekly Menu Committee Members Contact Mess Office, Mess Block IIT Bhilai Campus, Kutelabhata, Bhilai, Chhattisgarh 491002 messcoordinator@iitbhilai.ac.in © 2026 IIT Bhilai Mess Committee. All rights reserved.",
+    "id": 2
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Dr Shudhanwa Patra",
+    "level": "h3",
+    "selector": "#root > div > main > div > section:nth-of-type(4) > div > div:nth-of-type(1) > div > div > div > h3",
+    "content": "Dr Shudhanwa Patra. Dean of Student Affairs, IIT Bhilai 🎓  FIC and Associate Faculty DY",
+    "id": 3
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Dr Yagnesh Shadangi",
+    "level": "h3",
+    "selector": "#root > div > main > div > section:nth-of-type(4) > div > div:nth-of-type(2) > div:nth-of-type(2) > div > div:nth-of-type(1) > h3",
+    "content": "Dr Yagnesh Shadangi. Faculty In-Charge (FIC), Mess DM",
+    "id": 4
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Dr Milan Kumar Jena",
+    "level": "h3",
+    "selector": "#root > div > main > div > section:nth-of-type(4) > div > div:nth-of-type(2) > div:nth-of-type(2) > div > div:nth-of-type(2) > h3",
+    "content": "Dr Milan Kumar Jena. Associate FIC Mess, IIT Bhilai 👥 Mess Coordinator & President AR",
+    "id": 5
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Arush Ranjan",
+    "level": "h3",
+    "selector": "#root > div > main > div > section:nth-of-type(4) > div > div:nth-of-type(3) > div:nth-of-type(2) > div > div:nth-of-type(1) > h3",
+    "content": "Arush Ranjan. President ,COSA IIT Bhilai MK",
+    "id": 6
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Manish Kumar",
+    "level": "h3",
+    "selector": "#root > div > main > div > section:nth-of-type(4) > div > div:nth-of-type(3) > div:nth-of-type(2) > div > div:nth-of-type(2) > h3",
+    "content": "Manish Kumar. Mess Coordinator, IIT Bhilai Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai.",
+    "id": 7
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/menu",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Today's Menu",
+    "level": "h2",
+    "selector": "#root > div > main > div > div:nth-of-type(1) > h2",
+    "content": "Today's Menu. Full day schedule from the official IIT Bhilai mess sheet. 🍌 Breakfast 8:00 – 10:00 AM 🥗 Lunch 12:30 – 2:30 PM 🍪 Snacks 5:00 – 6:00 PM 🍛 Dinner 8:00 – 10:00 PM 🍽️ Veg Mode Off Basic Meal Idli+ Medu vada + Sambhar  + Tomato Chutney+Peanut Chatni Bread Bread(4)+Jam+Butter Beverages (150ml) Tea+Milk+Coffee+Sugar Cereals (150gms) Flavoured Cornflakes Eggs/Fruits Chikpea Salad with Peanut Vegetable Gravy/Dry Mix-Veg Dal Rjama daal Rice Plain Rice Fryems Papad/Aplam Ghee + Salad Mix Salad Breads Chapati/Phulka/Tawa Roti Curd (150ml) Curd (150ml) Fruits (150gm) Papaya Drink Beverage (150ml) Sikanji Beverages (150ml) Tea+Milk+Coffee+Sugar Vegetable Gravy/Dry Brinjal Dal Mixed Dal Rice Jeera Rice Breads Chapati/Phulka/Tawa Roti Salad Mixed Salad Fryems Papad Sweet Sewai Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai. IIT BHILAI Polaris - IIT Bhilai Home Today's Menu Weekly Menu Committee Members Contact Mess Office, Mess Block IIT Bhilai Campus, Kutelabhata, Bhilai, Chhattisgarh 491002 messcoordinator@iitbhilai.ac.in © 2026 IIT Bhilai Mess Committee. All rights reserved.",
+    "id": 8
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/menu",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "BREAKFAST",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(5) > div:nth-of-type(1) > h3",
+    "content": "BREAKFAST. Basic Meal Idli+ Medu vada + Sambhar  + Tomato Chutney+Peanut Chatni Bread Bread(4)+Jam+Butter Beverages (150ml) Tea+Milk+Coffee+Sugar Cereals (150gms) Flavoured Cornflakes Eggs/Fruits Chikpea Salad with Peanut",
+    "id": 9
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/menu",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "LUNCH",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(5) > div:nth-of-type(2) > h3",
+    "content": "LUNCH. Vegetable Gravy/Dry Mix-Veg Dal Rjama daal Rice Plain Rice Fryems Papad/Aplam Ghee + Salad Mix Salad Breads Chapati/Phulka/Tawa Roti Curd (150ml) Curd (150ml) Fruits (150gm) Papaya Drink Beverage (150ml) Sikanji",
+    "id": 10
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/menu",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Tea Time",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(5) > div:nth-of-type(3) > h3",
+    "content": "Tea Time. Beverages (150ml) Tea+Milk+Coffee+Sugar",
+    "id": 11
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/menu",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "DINNER",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(5) > div:nth-of-type(4) > h3",
+    "content": "DINNER. Vegetable Gravy/Dry Brinjal Dal Mixed Dal Rice Jeera Rice Breads Chapati/Phulka/Tawa Roti Salad Mixed Salad Fryems Papad Sweet Sewai Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai.",
+    "id": 12
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/menu/weekly",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Weekly Menu",
+    "level": "h2",
+    "selector": "#root > div > main > div > div:nth-of-type(1) > h2",
+    "content": "Weekly Menu. Official grid from the IIT Bhilai mess Google Sheet. 🍽️ Veg Mode Off BREAKFAST Basic Meal Aaloo Paratha + Tomato Chutney +  Sauce + Curd Besan Chilla + Chana ki sabji Methi Poori + Aaloo Chana Idli+ Medu vada + Sambhar  + Tomato Chutney+Peanut Chatni Poha+Mutter gravy+  Tomato cut+ Onion cut + Sev Milet Dosa + Sambhar +  Coconut Chutney Veg Pasta+ Tomato Kethcup +Green Chilly Sause Bread Bread(4)+Jam+Butter Bread(4)+Jam+Butter Bread(4)+Jam+Butter Bread(4)+Jam+Butter Bread(4)+Jam+Butter Bread(4)+Jam+Butter Bread(4)+Jam+Butter Beverages (150ml) Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Cereals (150gms) Oats Muesli Oats Flavoured Cornflakes Jalebi+Curd Muesli Muesli Eggs/Fruits Boiled egg/ Banana Boiled Egg/Banana Egg Bhurji/Banana Chikpea Salad with Peanut Banana/ Boiled Egg Germinated Sprouts Chikpea Salad with Sweet Corn LUNCH Vegetable Gravy/Dry Mixture Sprout Sabji Aloo Bhujia Soya Mutter Mix-Veg Bhindi Masala Chole Aloo Mutter Dry Dal Arhar Dal Kadhi Pakoda/ Mixture Dal Rjama daal Rasam+arahar dal Bhature ARAHAR DAL+Sambhar Rice Plain Rice Peas Rice Jeera Rice Plain Rice Jeera Rice Veg pulao Steam Rice Fryems Papad/Aplam Papad/Aplam Papad/Aplam Papad/Aplam Papad/Aplam Papad/Aplam Papad/Aplam Ghee + Salad Mix Salad Mix Salad Mix Salad Mix Salad Mix Salad Veniger Onion Salad Mix Salad Breads Chapati/Phulka/Tawa Roti + Ghee Chapati/Phulka/Tawa Roti Chapati/Phulka/Ta",
+    "id": 13
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/menu/weekly",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Week 2 & 4",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(4) > h3",
+    "content": "Week 2 & 4. BREAKFAST Basic Meal Aaloo Paratha + Tomato Chutney +  Sauce + Curd Besan Chilla + Chana ki sabji Methi Poori + Aaloo Chana Idli+ Medu vada + Sambhar  + Tomato Chutney+Peanut Chatni Poha+Mutter gravy+  Tomato cut+ Onion cut + Sev Milet Dosa + Sambhar +  Coconut Chutney Veg Pasta+ Tomato Kethcup +Green Chilly Sause Bread Bread(4)+Jam+Butter Bread(4)+Jam+Butter Bread(4)+Jam+Butter Bread(4)+Jam+Butter Bread(4)+Jam+Butter Bread(4)+Jam+Butter Bread(4)+Jam+Butter Beverages (150ml) Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Tea+Milk+Coffee+Sugar Cereals (150gms) Oats Muesli Oats Flavoured Cornflakes Jalebi+Curd Muesli Muesli Eggs/Fruits Boiled egg/ Banana Boiled Egg/Banana Egg Bhurji/Banana Chikpea Salad with Peanut Banana/ Boiled Egg Germinated Sprouts Chikpea Salad with Sweet Corn LUNCH Vegetable Gravy/Dry Mixture Sprout Sabji Aloo Bhujia Soya Mutter Mix-Veg Bhindi Masala Chole Aloo Mutter Dry Dal Arhar Dal Kadhi Pakoda/ Mixture Dal Rjama daal Rasam+arahar dal Bhature ARAHAR DAL+Sambhar Rice Plain Rice Peas Rice Jeera Rice Plain Rice Jeera Rice Veg pulao Steam Rice Fryems Papad/Aplam Papad/Aplam Papad/Aplam Papad/Aplam Papad/Aplam Papad/Aplam Papad/Aplam Ghee + Salad Mix Salad Mix Salad Mix Salad Mix Salad Mix Salad Veniger Onion Salad Mix Salad Breads Chapati/Phulka/Tawa Roti + Ghee Chapati/Phulka/Tawa Roti Chapati/Phulka/Tawa Roti  + Ghee Chapati/Phulka/Tawa Roti Chapati/Phulka/Tawa Roti  +",
+    "id": 14
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Student Mess Committee",
+    "level": "h2",
+    "selector": "#root > div > main > div > div:nth-of-type(1) > h2",
+    "content": "Student Mess Committee. The student team managing menus, feedback and daily mess operations. 🎓 Coordinator MK Mess Coordinator ✉ 🎓 Mess In-Charge MM Mess Incharge MY Mess Incharge 👥 Members SM Member AK Member LS Technical Member KS Technical Member DP Member AS Member AP Member PS Member VY Member KN Member BA Member SK Member SG Member SK Member AN Member Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai. IIT BHILAI Polaris - IIT Bhilai Home Today's Menu Weekly Menu Committee Members Contact Mess Office, Mess Block IIT Bhilai Campus, Kutelabhata, Bhilai, Chhattisgarh 491002 messcoordinator@iitbhilai.ac.in © 2026 IIT Bhilai Mess Committee. All rights reserved.",
+    "id": 15
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Manish Kumar",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(3) > div > h3",
+    "content": "Manish Kumar. Mess Coordinator ✉ 🎓 Mess In-Charge MM",
+    "id": 16
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Mr Mahesh Koli",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(5) > div:nth-of-type(1) > h3",
+    "content": "Mr Mahesh Koli. Mess Incharge MY",
+    "id": 17
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Mr Yashavant Kumar",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(5) > div:nth-of-type(2) > h3",
+    "content": "Mr Yashavant Kumar. Mess Incharge 👥 Members SM",
+    "id": 18
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Sudhanshu Mishra",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(1) > h3",
+    "content": "Sudhanshu Mishra. Member AK",
+    "id": 19
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Abhishek Kumar",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(2) > h3",
+    "content": "Abhishek Kumar. Member LS",
+    "id": 20
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Lakshya Soni",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(3) > h3",
+    "content": "Lakshya Soni. Technical Member KS",
+    "id": 21
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Krish Shiyani",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(4) > h3",
+    "content": "Krish Shiyani. Technical Member DP",
+    "id": 22
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Dheeraj Preetham Reddy",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(5) > h3",
+    "content": "Dheeraj Preetham Reddy. Member AS",
+    "id": 23
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Abhishek Singh",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(6) > h3",
+    "content": "Abhishek Singh. Member AP",
+    "id": 24
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Arpit Pandey",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(7) > h3",
+    "content": "Arpit Pandey. Member PS",
+    "id": 25
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Pushkar Surendra Chaudhari",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(8) > h3",
+    "content": "Pushkar Surendra Chaudhari. Member VY",
+    "id": 26
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Venna Yaswanth",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(9) > h3",
+    "content": "Venna Yaswanth. Member KN",
+    "id": 27
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Kavita Negi",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(10) > h3",
+    "content": "Kavita Negi. Member BA",
+    "id": 28
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Bikka Akshara Venus",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(11) > h3",
+    "content": "Bikka Akshara Venus. Member SK",
+    "id": 29
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Shubham Kumar",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(12) > h3",
+    "content": "Shubham Kumar. Member SG",
+    "id": 30
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Sadhana Gupta",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(13) > h3",
+    "content": "Sadhana Gupta. Member SK",
+    "id": 31
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Sanjay Kumar Verma",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(14) > h3",
+    "content": "Sanjay Kumar Verma. Member AN",
+    "id": 32
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/committee",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Akash Netam",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(7) > div:nth-of-type(15) > h3",
+    "content": "Akash Netam. Member Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai.",
+    "id": 33
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/contact",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Contact Us",
+    "level": "h2",
+    "selector": "#root > div > main > div > div:nth-of-type(1) > h2",
+    "content": "Contact Us. Reach the mess committee and caterers. 01 · Map & Navigation",
+    "id": 34
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/contact",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Mess Location",
+    "level": "h2",
+    "selector": "#root > div > main > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > h2",
+    "content": "Mess Location. The permanent campus of IIT Bhilai is situated at Kutelabhata, Bhilai. Use this interactive map to explore the Mess boundary and surrounding area. Address Details Indian Institute of Technology Bhilai, Kutelabhata, Khapri, District - Durg, Chhattisgarh, Pin - 491002 Open in Google Maps Mess Office, Mess Block IIT Bhilai Campus, Kutelabhata, Bhilai, Chhattisgarh 491002 📧 messcoordinator@iitbhilai.ac.in Galav Mess Shreesai Mess Krishna Kripa Amul Parlour Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai. IIT BHILAI Polaris - IIT Bhilai Home Today's Menu Weekly Menu Committee Members Contact Mess Office, Mess Block IIT Bhilai Campus, Kutelabhata, Bhilai, Chhattisgarh 491002 messcoordinator@iitbhilai.ac.in © 2026 IIT Bhilai Mess Committee. All rights reserved.",
+    "id": 35
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/contact",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "📮 Mess Committee",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(3) > div:nth-of-type(1) > h3",
+    "content": "📮 Mess Committee. Mess Office, Mess Block IIT Bhilai Campus, Kutelabhata, Bhilai, Chhattisgarh 491002 📧 messcoordinator@iitbhilai.ac.in",
+    "id": 36
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/contact",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "🍳 Caterers",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(3) > div:nth-of-type(2) > h3",
+    "content": "🍳 Caterers. Galav Mess Shreesai Mess Krishna Kripa Amul Parlour Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai.",
+    "id": 37
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/complaints",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Complaints",
+    "level": "h2",
+    "selector": "#root > div > main > div > div:nth-of-type(1) > h2",
+    "content": "Complaints. Spot a problem or complain at the mess? Sign in with your Institute Google account and you will be redirected to the official feedback form. Every submission goes directly to the mess committee for review. The complaint section is only for students and staff with an Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai. IIT BHILAI Polaris - IIT Bhilai Home Today's Menu Weekly Menu Committee Members Contact Mess Office, Mess Block IIT Bhilai Campus, Kutelabhata, Bhilai, Chhattisgarh 491002 messcoordinator@iitbhilai.ac.in © 2026 IIT Bhilai Mess Committee. All rights reserved.",
+    "id": 38
+  },
+  {
+    "url": "https://messwebsite-react.vercel.app/#/complaints",
+    "page_title": "Pakadarpanalaya | IIT Bhilai Mess",
+    "heading": "Sign in with your IIT Bhilai Google account",
+    "level": "h3",
+    "selector": "#root > div > main > div > div:nth-of-type(2) > h3",
+    "content": "Sign in with your IIT Bhilai Google account. The complaint section is only for students and staff with an Pakadarpanalaya IIT Bhilai Mess Portal The official student portal for mess updates, weekly menu schedules, complaint assistance, and everyday dining information at IIT Bhilai.",
+    "id": 39
+  }
+]
